@@ -1,4 +1,4 @@
-nclude "lists.h"
+#include "lists.h"
 #include <stdlib.h>
 
 /**
@@ -28,9 +28,9 @@ dlistint_t *add_dnodeint(dlistint_t **head, const int n)
 		new->next = NULL;
 		new->prev = NULL;
 		return (new);
-			}
+	}
 
-		/* account for regular linked list */
+	/* account for regular linked list */
 	new->next = *head;
 	new->prev = NULL;
 	(*head)->prev = new;
