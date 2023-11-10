@@ -1,127 +1,101 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-#include <time.h>
-
 /**
- * f4 - finds the biggest number
- *
- * @usrn: username
- * @len: length of username
- * Return: the biggest number
+ * f2_f3 - copied from server
+ * @p: argv[1]
+ * @pl: length of argv[1]
+ * @flag: determine if f2 or f3
+ * Return: element of key array.
  */
-int f4(char *usrn, int len)
+int f2_f3(char *p, int pl, char flag)
 {
-	int ch;
-	int vch;
-	unsigned int rand_num;
+	int res, i;
 
-	ch = *usrn;
-	vch = 0;
-
-	while (vch < len)
+	res = flag == 0 ? 0 : 1;
+	for (i = 0; i < pl; i++)
 	{
-		if (ch < usrn[vch])
-						ch = usrn[vch];
-		vch += 1;
+		if (flag == 0)
+			res += p[i];
+		else
+			res *= p[i];
 	}
-
-	srand(ch ^ 14);
-	rand_num = rand();
-
-	return (rand_num & 63);
+	return ((res ^ (flag == 0 ? 0x4F : 0x55)) & 0x3F);
 }
-
 /**
- * f5 - multiplies each char of username
- *
- * @usrn: username
- * @len: length of username
- * Return: multiplied char
+ * f4 - copied from server
+ * @p: argv[1]
+ * @pl: length of argv[1]
+ * Return: element of key array.
  */
-int f5(char *usrn, int len)
+int f4(char *p, int pl)
 {
-	int ch;
-	int vch;
+	int i;
+	int res = p[0];
 
-	ch = vch = 0;
-
-	while (vch < len)
-	{
-		ch = ch + usrn[vch] * usrn[vch];
-		vch += 1;
-	}
-
-	return (((unsigned int)ch ^ 239) & 63);
+	for (i = 0; i < pl; i++)
+		if (p[i] > res)
+			res = p[i];
+	srand(res ^ 0xE);
+	return (rand() & 0x3F);
 }
-
 /**
- * f6 - generates a random char
- *
- * @usrn: username
- * Return: a random char
+ * f5 - copied from server
+ * @p: argv[1]
+ * @pl: length of argv[1]
+ * Return: element of key array.
  */
-int f6(char *usrn)
+int f5(char *p, int pl)
 {
-	int ch;
-	int vch;
+	int i, res = 0;
 
-	ch = vch = 0;
-
-	while (vch < *usrn)
-	{
-		ch = rand();
-		vch += 1;
-	}
-
-	return (((unsigned int)ch ^ 229) & 63);
+	for (i = 0; i < pl; i++)
+		res += p[i] * p[i];
+	return ((res ^ 0xEF) & 0x3F);
 }
-
 /**
- * main - Entry point
- *
- * @argc: arguments count
- * @argv: arguments vector
- * Return: Always 0
+ * f6 - copied from server
+ * @p: argv[1]
+ * Return: element of key array.
  */
-int main(int argc, char **argv)
+int f6(char p)
 {
-	char keygen[7];
-	int len, ch, vch;
-	long alph[] = {
-		0x3877445248432d41, 0x42394530534e6c37, 0x4d6e706762695432,
-		0x74767a5835737956, 0x2b554c59634a474f, 0x71786636576a6d34,
-		0x723161513346655a, 0x6b756f494b646850 };
-	(void) argc;
+	int i, res = 0;
 
-	for (len = 0; argv[1][len]; len++)
-		;
-	/* ----------- f1 ----------- */
-	keygen[0] = ((char *)alph)[(len ^ 59) & 63];
-	/* ----------- f2 ----------- */
-	ch = vch = 0;
-	while (vch < len)
-	{
-		ch = ch + argv[1][vch];
-		vch = vch + 1;
-	}
-	keygen[1] = ((char *)alph)[(ch ^ 79) & 63];
-	/* ----------- f3 ----------- */
-	ch = 1;
-	vch = 0;
-	while (vch < len)
-	{
-		ch = argv[1][vch] * ch;
-		vch = vch + 1;
-	}
-	keygen[2] = ((char *)alph)[(ch ^ 85) & 63];
-	/* ----------- f4 ----------- */
-	keygen[3] = ((char *)alph)[f4(argv[1], len)];
-	/* ----------- f5 ----------- */
-	keygen[4] = ((char *)alph)[f5(argv[1], len)];
-	/* ----------- f6 ----------- */
-	keygen[5] = ((char *)alph)[f6(argv[1])];
-	keygen[6] = '\0';
-	for (ch = 0; keygen[ch]; ch++)
-		printf("%c", keygen[ch]);
+	for (i = 0; i < p; i++)
+		res = rand();
+	return ((res ^ 0xE5) & 0x3F);
+}
+/**
+ * main - generates a key, mostly copied from server.
+ * @ac: argument count
+ * @av: argument vectors
+ * Return: 0 on success
+ */
+int main(int ac, char *av[])
+{
+	char *p;
+	char h[] = "A-CHRDw87lNS0E9B2TibgpnMVys5XzvtOGJcYLU+4mjW6fxqZeF3Qa1rPhdKIouk";
+	char key[7];
+	int pl, res;
+
+	if (ac != 2)
+		return (-1);
+	p = av[1];
+	pl = strlen(p);
+	res = ((pl ^ 0x3B) & 0x3F);
+	key[0] = h[res];
+	res = f2_f3(p, pl, 0);
+	key[1] = h[res];
+	res = f2_f3(p, pl, 1);
+	key[2] = h[res];
+	res = f4(p, pl);
+	key[3] = h[res];
+	res = f5(p, pl);
+	key[4] = h[res];
+	res = f6(p[0]);
+	key[5] = h[res];
+	key[6] = '\0';
+	printf("%s\n", key);
 	return (0);
 }
